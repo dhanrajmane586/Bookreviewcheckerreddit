@@ -1,4 +1,5 @@
 streamlit
+serpapi
 googlesearch-python
 beautifulsoup4
 requests
