@@ -12,7 +12,7 @@ st.title("📚 Reddit Book Review Finder")
 # Debug mode toggle
 debug_mode = st.sidebar.checkbox("Debug Mode", value=False)
 
-# API key validation with better error handling
+# API key validation
 try:
     SERP_API_KEY = st.secrets["serpapi"]["api_key"]
     if not SERP_API_KEY or SERP_API_KEY == "your_api_key_here":
@@ -33,26 +33,23 @@ except Exception as e:
     st.error(f"❌ Error accessing secrets: {str(e)}")
     st.stop()
 
-# Try to import serpapi with error handling
-try:
-    from serpapi import GoogleSearch
-    if debug_mode:
-        st.success("✅ SerpAPI imported successfully")
-except ImportError as e:
-    st.error(f"❌ Failed to import serpapi: {str(e)}")
-    st.error("Make sure your requirements.txt contains: google-search-results")
-    st.stop()
+# User input
+book_name = st.text_input("Enter Book Title", placeholder="e.g., The Great Gatsby")
 
-# API key test function
 def test_api_key():
-    """Test if the API key is working"""
+    """Test if the API key is working using requests"""
     try:
-        test_search = GoogleSearch({
+        url = "https://serpapi.com/search"
+        params = {
             "q": "test search",
             "api_key": SERP_API_KEY,
             "num": 1
-        })
-        results = test_search.get_dict()
+        }
+        
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        
+        results = response.json()
         
         if "error" in results:
             return False, f"API Error: {results['error']}"
@@ -60,13 +57,12 @@ def test_api_key():
             return True, "API key is working correctly!"
         else:
             return False, "Unexpected API response format"
+    except requests.exceptions.RequestException as e:
+        return False, f"Network error: {str(e)}"
     except Exception as e:
         return False, f"API test failed: {str(e)}"
 
-# User input
-book_name = st.text_input("Enter Book Title", placeholder="e.g., The Great Gatsby")
-
-# API test button (always visible)
+# API test button
 if st.button("🔧 Test API Key"):
     with st.spinner("Testing API..."):
         is_working, message = test_api_key()
@@ -76,8 +72,9 @@ if st.button("🔧 Test API Key"):
             st.error(message)
 
 def get_reddit_urls(query, max_results=10):
-    """Search for Reddit URLs using SerpAPI"""
+    """Search for Reddit URLs using SerpAPI via requests"""
     try:
+        url = "https://serpapi.com/search"
         params = {
             "q": f'"{query}" review site:reddit.com',
             "hl": "en",
@@ -89,8 +86,10 @@ def get_reddit_urls(query, max_results=10):
         if debug_mode:
             st.write("🔍 Search parameters:", params)
         
-        search = GoogleSearch(params)
-        results = search.get_dict()
+        response = requests.get(url, params=params, timeout=15)
+        response.raise_for_status()
+        
+        results = response.json()
         
         if debug_mode:
             st.write("📊 Raw API Response:", results)
@@ -124,6 +123,11 @@ def get_reddit_urls(query, max_results=10):
         
         return urls
     
+    except requests.exceptions.RequestException as e:
+        st.error(f"Network error: {str(e)}")
+        if debug_mode:
+            st.exception(e)
+        return []
     except Exception as e:
         st.error(f"Error searching for Reddit URLs: {str(e)}")
         if debug_mode:
@@ -247,7 +251,7 @@ if book_name:
     else:
         st.success(f"🎉 Found {len(reddit_urls)} Reddit threads!")
         
-        # Display all threads in sequence instead of tabs (better for debugging)
+        # Display all threads
         for i, url_data in enumerate(reddit_urls, 1):
             st.markdown(f"## Thread {i}")
             
@@ -276,7 +280,6 @@ with st.sidebar:
     
     st.header("⚙️ API Info")
     if st.button("Check API Credits"):
-        # This would require additional API call to check account info
         st.info("Check your SerpAPI dashboard for credit information")
     
     st.header("🔧 Debug")
