@@ -9,6 +9,10 @@ import time
 st.set_page_config(page_title="Reddit Book Reviews", layout="wide")
 st.title("📚 Reddit Book Review Finder")
 
+import streamlit as st
+
+SERP_API_KEY = st.secrets["serpapi"]["api_key"]
+
 # Get API key from Streamlit secrets
 SERP_API_KEY = st.secrets["serpapi"]["api_key"]
 
