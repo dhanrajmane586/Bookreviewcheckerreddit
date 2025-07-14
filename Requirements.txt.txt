@@ -1,4 +1,4 @@
 streamlit
-google-search-results
+serpapi
 requests
 pandas
