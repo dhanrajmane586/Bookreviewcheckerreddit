@@ -2,3 +2,4 @@ streamlit
 serpapi
 requests
 pandas
+google-search-results
